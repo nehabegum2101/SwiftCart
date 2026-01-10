@@ -146,11 +146,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const payBtn = document.querySelector("#subtotal .normal");
 
-  if (!payBtn) {
-    console.error("Proceed To Pay button not found");
-    return;
-  }
-
   payBtn.addEventListener("click", function () {
 
     const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
@@ -160,27 +155,55 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const order = {
-      id: "ORD" + Date.now(),
-      items: cartItems,
-      total: cartItems.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0
-      ),
-      date: new Date().toLocaleString()
+    const totalAmount = cartItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    const options = {
+      key: rzp_test_S26AaPs3nPbeRY,
+     amount: totalAmount * 100, // Razorpay works in paise
+      currency: "INR",
+      name: "SwiftCart",
+      description: "Order Payment",
+      image: "images/logo.png",
+      handler: function (response) {
+
+        const order = {
+          id: "ORD" + Date.now(),
+          paymentId: response.razorpay_payment_id,
+          items: cartItems,
+          total: totalAmount,
+          date: new Date().toLocaleString()
+        };
+
+        const orders = JSON.parse(localStorage.getItem("orders")) || [];
+        orders.push(order);
+
+        localStorage.setItem("orders", JSON.stringify(orders));
+        localStorage.removeItem("cart");
+
+        window.location.href = "order.html";
+      },
+      prefill: {
+        name: "SwiftCart Customer",
+        email: "customer@test.com",
+        contact: "9999999999"
+      },
+      theme: {
+        color: "#db7093"
+      }
     };
 
-    const orders = JSON.parse(localStorage.getItem("orders")) || [];
-    orders.push(order);
-
-    localStorage.setItem("orders", JSON.stringify(orders));
-    localStorage.removeItem("cart");
-
-    window.location.href = "payment.html";
+    const rzp = new Razorpay(options);
+    rzp.open();
   });
 
 });
 </script>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
 
 </body>
 </html>
